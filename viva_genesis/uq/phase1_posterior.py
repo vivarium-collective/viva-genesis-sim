@@ -24,7 +24,10 @@ HEADLINE_CLASS = "serpentinization=phreeqc+spatial_transport=fipy"
 
 
 def workspace_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    # Resolve the investigation workspace at runtime from cwd — the simulator
+    # package no longer lives inside the workspace repo (see viva_genesis._paths).
+    from .._paths import workspace_root as _wr
+    return _wr()
 
 
 def _load(path: str) -> dict:

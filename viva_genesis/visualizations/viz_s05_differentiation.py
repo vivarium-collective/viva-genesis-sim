@@ -26,7 +26,8 @@ from process_bigraph.visualization import Visualization
 
 from . import viz_style as S
 
-_ROOT = Path(__file__).resolve().parents[2]
+from .._paths import workspace_root as _workspace_root
+_ROOT = _workspace_root()
 _STUDY_DIR = _ROOT / "workspace/studies/s05-differentiation"
 _MODES = ["oxygen", "none", "random", "clamped"]
 _ENV_B = 0.025

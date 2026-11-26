@@ -28,7 +28,8 @@ from process_bigraph.visualization import Visualization
 from . import viz_style as S
 
 _PLOTLY = "https://cdn.plot.ly/plotly-2.27.0.min.js"
-_STUDY = Path(__file__).resolve().parents[2] / "workspace/studies/s04-morphomechanics/study.yaml"
+from .._paths import workspace_root as _workspace_root
+_STUDY = _workspace_root() / "workspace/studies/s04-morphomechanics/study.yaml"
 _DEFAULT_ADH = [0.0, 0.3, 0.5, 0.62, 0.75, 0.9, 0.95]
 _DEFAULT_SEEDS = [1, 2, 3]
 _PROP_COLORS = [S.AMBER, S.VIOLET, S.RUST, "#2563eb", "#15803d", "#db2777", "#ca8a04", "#0891b2"]
