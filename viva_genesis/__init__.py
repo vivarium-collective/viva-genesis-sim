@@ -26,5 +26,5 @@ from . import geochemistry      # noqa: E402,F401
 from . import transport         # noqa: E402,F401
 from . import electrochemistry  # noqa: E402,F401
 from . import protometabolism   # noqa: E402,F401
-from . import viz               # noqa: E402,F401
+from .visualizations import viz  # noqa: E402,F401
 from . import composites        # noqa: E402,F401
