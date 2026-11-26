@@ -1,0 +1,81 @@
+[project]
+name = "viva-genesis-sim"
+version = "0.1.0"
+description = "Origins-of-life / eukaryogenesis / multicellularity simulator — the process-bigraph composites, processes, and genuine-engine bridges extracted from the viva-genesis investigation workspace."
+requires-python = ">=3.12"
+dependencies = [
+    "process-bigraph",
+    "bigraph-schema",
+    "bigraph-viz>=2.0.3",
+    "pyyaml>=6.0",
+    "plotly",
+    "networkx>=3.0",
+    # Real geochemistry + reactive-transport engines (vent reactor, serpentinization):
+    # phreeqpython bridges the genuine USGS PHREEQC (IPhreeqc) speciation engine;
+    # fipy is the finite-volume PDE solver for the spatial vent reactor.
+    "phreeqpython>=1.6",
+    "fipy>=4.0",
+    # Genuine-simulator wrappers this campaign REUSES (pinned in [tool.uv.sources]):
+    #   viva-equilibrator — eQuilibrator component-contribution ΔG' engine
+    #   viva-tellurium    — Tellurium/libRoadRunner SBML engine
+    #   viva-fenics       — dolfinx advection–diffusion–Soret FEM solver
+    "viva-equilibrator",
+    "viva-tellurium",
+    "viva-fenics",
+    # Shared process library used by several composites.
+    "viva-basic-processes",
+    # Transitional direct deps (remaining `import tellurium` / `import equilibrator_api`
+    # call sites migrate to the wrappers in a follow-up audit):
+    "equilibrator-api>=0.6",
+    "tellurium>=2.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+# Investigation-framework coupling — NOT needed to import the package or run most
+# composites. Only required for: the workspace-tooling helpers (lint_checks /
+# build_hook, lazily imported and invoked BY the framework), the viz classes, and
+# 2 of ~60 composites (endogenous_boundary, physical_reproduction) that build via
+# viva_superpowers.composite_generator. Installed automatically in the viva-genesis
+# investigation workspace, which depends on the framework anyway. Decoupling these
+# last call sites so the simulator is 100% framework-free is a documented follow-up.
+workspace = [
+    "vivarium-workbench",
+    "viva-superpowers",
+    "viva-discovery-engine",
+]
+# Membrane-closure composites — real Martini 3 CG MD. OpenMM is heavy, so this is
+# OPT-IN: core.build_core() registers OpenMMMartiniProcess only when installed.
+membrane = ["viva-openmm"]
+# Spatial enclosure composites — the real Rust Cellular Potts engine from viva-cpm
+# (top-level `cpm` import). OPT-IN like the membrane extra.
+spatial = ["viva-cpm"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Allow ecosystem git-direct-reference deps (@ git+https://…) that hatchling
+# otherwise rejects.
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["viva_genesis"]
+
+# Bundle the PHREEQC thermodynamic database + curated YAML data shipped in the package.
+[tool.hatch.build.targets.wheel.force-include]
+"viva_genesis/data" = "viva_genesis/data"
+
+[tool.uv.sources]
+process-bigraph = { git = "https://github.com/vivarium-collective/process-bigraph.git", branch = "main" }
+viva-basic-processes = { git = "https://github.com/vivarium-collective/viva-basic-processes.git", branch = "main" }
+# Sources for the optional `workspace` extra:
+vivarium-workbench = { git = "https://github.com/vivarium-collective/vivarium-workbench.git", branch = "main" }
+viva-superpowers = { git = "https://github.com/vivarium-collective/viva-superpowers.git", branch = "main" }
+# Genuine-simulator wrappers (pinned to releases).
+viva-equilibrator = { git = "https://github.com/vivarium-collective/viva-equilibrator.git", tag = "v0.1.0" }
+viva-tellurium = { git = "https://github.com/vivarium-collective/viva-tellurium.git", tag = "v0.1.2" }
+viva-fenics = { git = "https://github.com/vivarium-collective/viva-fenics.git", tag = "v0.1.0" }
+# viva-openmm has no release tag yet — pin to the pushed rename commit on main.
+viva-openmm = { git = "https://github.com/vivarium-collective/viva-openmm.git", rev = "7b7cb6a" }
