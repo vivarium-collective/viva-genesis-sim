@@ -1,6 +1,6 @@
 [project]
 name = "viva-genesis-sim"
-version = "0.1.0"
+version = "0.1.1"
 description = "Origins-of-life / eukaryogenesis / multicellularity simulator — the process-bigraph composites, processes, and genuine-engine bridges extracted from the viva-genesis investigation workspace."
 requires-python = ">=3.12"
 dependencies = [
@@ -61,11 +61,10 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
+# hatchling bundles every file under the selected package by default, so the
+# PHREEQC database (data/llnl.dat) and curated YAML (data/vg_data/*.yaml) ship
+# automatically — no force-include needed (it would double-add them).
 packages = ["viva_genesis"]
-
-# Bundle the PHREEQC thermodynamic database + curated YAML data shipped in the package.
-[tool.hatch.build.targets.wheel.force-include]
-"viva_genesis/data" = "viva_genesis/data"
 
 [tool.uv.sources]
 process-bigraph = { git = "https://github.com/vivarium-collective/process-bigraph.git", branch = "main" }
