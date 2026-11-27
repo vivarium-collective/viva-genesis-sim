@@ -17,6 +17,8 @@ dependencies = [
     # Genuine PHREEQC/IPhreeqc engine as a reusable config-driven bridge.
     "viva-phreeqc",
     "fipy>=4.0",
+    # Genuine FiPy FVM engine as reusable primitives + a general transport process.
+    "viva-fipy",
     # Genuine-simulator wrappers this campaign REUSES (pinned in [tool.uv.sources]):
     #   viva-equilibrator — eQuilibrator component-contribution ΔG' engine
     #   viva-tellurium    — Tellurium/libRoadRunner SBML engine
@@ -70,6 +72,7 @@ packages = ["viva_genesis"]
 
 [tool.uv.sources]
 viva-phreeqc = { git = "https://github.com/vivarium-collective/viva-phreeqc.git", tag = "0.1.0" }
+viva-fipy = { git = "https://github.com/vivarium-collective/viva-fipy.git", tag = "0.1.0" }
 process-bigraph = { git = "https://github.com/vivarium-collective/process-bigraph.git", branch = "main" }
 viva-basic-processes = { git = "https://github.com/vivarium-collective/viva-basic-processes.git", branch = "main" }
 # Sources for the optional `workspace` extra:
