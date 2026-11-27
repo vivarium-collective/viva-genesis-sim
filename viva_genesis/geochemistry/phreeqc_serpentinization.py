@@ -185,12 +185,33 @@ class PhreeqcSerpentinizationProcess(Process):
 
     # -- engine ------------------------------------------------------------
     def _engine(self):
-        """Build (once) and return the PhreeqPython instance bound to llnl.dat."""
+        """Build (once) the reusable viva_phreeqc engine bound to the vendored llnl.dat."""
         if self._pp is None:
-            from phreeqpython import PhreeqPython  # lazy — real IPhreeqc bridge
-            self._pp = PhreeqPython(database=self.config["database"],
-                                    database_directory=_db_dir())
+            from viva_phreeqc import PhreeqcEngine  # the genuine IPhreeqc bridge, reused
+            self._pp = PhreeqcEngine(database=self.config["database"],
+                                     database_directory=_db_dir())
         return self._pp
+
+    def _recipe(self) -> dict:
+        """Serpentinization speciation expressed as a viva_phreeqc recipe (data): the
+        peridotite reactant set + the serpentinite equilibrium assemblage + the species
+        read back. The engine + recipe execution are reused from viva-phreeqc; only this
+        domain chemistry lives here."""
+        c = self.config
+        return {
+            "solution": {"units": "mol/kgw", "temp": "$temp_c", "pH": 6.5,
+                         "Na": c["fluid_na"], "Cl": c["fluid_cl"], "Mg": c["fluid_mg"],
+                         "Ca": c["fluid_ca"], "Fe(2)": c["fluid_fe"], "C(4)": "$dic"},
+            "reactants": [{"phase": "Forsterite", "extent": "$moles", "factor": 1.0 - c["fe_fraction"]},
+                          {"phase": "Fayalite", "extent": "$moles", "factor": c["fe_fraction"]},
+                          {"phase": "Diopside", "extent": "$moles", "factor": c["pyroxene_fraction"]}],
+            "equalize": {"phases": ["Chrysotile", "Brucite", "Magnetite", "Tremolite", "Diopside"],
+                         "targets": [0.0, 0.0, 0.0, 0.0, 0.0]},
+            "extract": {"H2": {"species": "H2"}, "OH": {"species": "OH-"}, "HCO3": {"species": "HCO3-"},
+                        "CO3": {"species": "CO3-2"}, "Hplus": {"species": "H+"},
+                        "pH": {"pH": True}, "pe": {"pe": True}, "charge": {"total": "charge"},
+                        "saturation_index": {"si": "Calcite", "default": 0.0}},
+        }
 
     def _activity(self, temperature: float, flow_velocity: float) -> float:
         """Dimensionless 0..1 reaction driver: a Gaussian temperature window
@@ -203,52 +224,19 @@ class PhreeqcSerpentinizationProcess(Process):
         return max(0.0, temp_term * flow_term)
 
     def _speciate(self, temperature_c: float, moles_olivine: float, dic: float) -> dict:
-        """Run ONE real PHREEQC serpentinization calculation; return fluid state."""
-        pp = self._engine()
-        c = self.config
-        sol = pp.add_solution({
-            "units": "mol/kgw",
-            "temp": max(0.0, min(temperature_c, 350.0)),
-            "pH": 6.5,
-            "Na": c["fluid_na"], "Cl": c["fluid_cl"], "Mg": c["fluid_mg"],
-            "Ca": c["fluid_ca"], "Fe(2)": c["fluid_fe"],
-            "C(4)": max(dic, 1e-9),
+        """Run ONE real PHREEQC serpentinization via the reused viva_phreeqc engine, then
+        reconstruct the alkalinity (OH + carbonate − H+) from the extracted species."""
+        from viva_phreeqc import speciate
+        got = speciate(self._engine(), self._recipe(), {
+            "temp_c": max(0.0, min(temperature_c, 350.0)),
+            "moles": moles_olivine,
+            "dic": max(dic, 1e-9),
         })
-        try:
-            if moles_olivine > 0.0:
-                fe = c["fe_fraction"]
-                sol.add("Forsterite", moles_olivine * (1.0 - fe), "mol")
-                sol.add("Fayalite", moles_olivine * fe, "mol")
-                # Pyroxene makes it peridotite -> the Ca-OH high-pH endmember.
-                diopside = moles_olivine * c["pyroxene_fraction"]
-                if diopside > 0.0:
-                    sol.add("Diopside", diopside, "mol")
-                # Precipitate the serpentinite assemblage (quartz-undersaturated);
-                # tremolite + diopside buffer the Ca-OH fluid to the field pH.
-                sol.equalize(["Chrysotile", "Brucite", "Magnetite", "Tremolite", "Diopside"],
-                             [0.0, 0.0, 0.0, 0.0, 0.0])
-            sp = sol.species
-            h2 = float(sp.get("H2", 0.0))                       # dissolved H2, mol/kgw
-            oh = float(sp.get("OH-", 0.0))
-            hco3 = float(sp.get("HCO3-", 0.0))
-            co3 = float(sp.get("CO3-2", 0.0))
-            hplus = float(sp.get("H+", 0.0))
-            alk = max(0.0, oh + hco3 + 2.0 * co3 - hplus)       # eq/kgw (OH + carbonate)
-            # Carbonate saturation of the reacted fluid — the downstream
-            # chimney/pore-wall precipitation driver (not forced to equilibrium,
-            # so it carries a meaningful SI). Guarded: a database lacking the
-            # phase yields 0.0 (neutral driver) rather than raising.
-            try:
-                si_carbonate = float(sol.si("Calcite"))
-            except Exception:
-                si_carbonate = 0.0
-            out = {
-                "pH": float(sol.pH), "pe": float(sol.pe), "H2": h2, "alkalinity": alk,
-                "charge": float(sol.total("charge")), "saturation_index": si_carbonate,
-            }
-        finally:
-            sol.forget()  # release the PHREEQC solution slot (avoid leak over a long run)
-        return out
+        alk = max(0.0, got["OH"] + got["HCO3"] + 2.0 * got["CO3"] - got["Hplus"])  # eq/kgw
+        return {
+            "pH": got["pH"], "pe": got["pe"], "H2": got["H2"], "alkalinity": alk,
+            "charge": got["charge"], "saturation_index": got["saturation_index"],
+        }
 
     def update(self, state, interval):
         temperature_k = float(state["temperature"])

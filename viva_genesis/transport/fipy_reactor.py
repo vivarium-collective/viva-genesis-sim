@@ -162,18 +162,19 @@ class FipyReactiveTransportProcess(Process):
 
     # -- FiPy construction (lazy; heavy import stays out of module import) --
     def _build(self):
-        from fipy import (CellVariable, DiffusionTerm, FaceVariable, Grid2D,
-                          PowerLawConvectionTerm, TransientTerm, Variable)
-        try:
-            from fipy.solvers.scipy.linearLUSolver import LinearLUSolver
-            self._solver = LinearLUSolver()
-        except Exception:  # pragma: no cover
-            self._solver = None
+        # Reuse the genuine FiPy FVM engine primitives from viva-fipy; this process keeps
+        # the vent-specific domain PDE (buoyant Darcy convection, vent boundary conditions).
+        from viva_fipy import fipy_classes, grid2d, lu_solver
+        F = fipy_classes()
+        CellVariable = F["CellVariable"]; DiffusionTerm = F["DiffusionTerm"]
+        FaceVariable = F["FaceVariable"]; PowerLawConvectionTerm = F["PowerLawConvectionTerm"]
+        TransientTerm = F["TransientTerm"]; Variable = F["Variable"]
+        self._solver = lu_solver()
 
         nx = int(self.config["nx"]); ny = int(self.config["ny"])
         self._dx = float(self.config["length_m"]) / nx
         self._dy = float(self.config["height_m"]) / ny
-        self._mesh = Grid2D(nx=nx, ny=ny, dx=self._dx, dy=self._dy)
+        self._mesh = grid2d(nx, ny, self._dx, self._dy)
         T0 = float(self.config["seawater_temp"])
         self._T = CellVariable(name="temperature", mesh=self._mesh, value=T0, hasOld=True)
         self._S = CellVariable(name="solute", mesh=self._mesh, value=0.0, hasOld=True)

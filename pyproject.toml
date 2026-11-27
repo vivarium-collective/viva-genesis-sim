@@ -1,6 +1,6 @@
 [project]
 name = "viva-genesis-sim"
-version = "0.1.4"
+version = "0.1.5"
 description = "Origins-of-life / eukaryogenesis / multicellularity simulator — the process-bigraph composites, processes, and genuine-engine bridges extracted from the viva-genesis investigation workspace."
 requires-python = ">=3.12"
 dependencies = [
@@ -14,7 +14,11 @@ dependencies = [
     # phreeqpython bridges the genuine USGS PHREEQC (IPhreeqc) speciation engine;
     # fipy is the finite-volume PDE solver for the spatial vent reactor.
     "phreeqpython>=1.6",
+    # Genuine PHREEQC/IPhreeqc engine as a reusable config-driven bridge.
+    "viva-phreeqc",
     "fipy>=4.0",
+    # Genuine FiPy FVM engine as reusable primitives + a general transport process.
+    "viva-fipy",
     # Genuine-simulator wrappers this campaign REUSES (pinned in [tool.uv.sources]):
     #   viva-equilibrator — eQuilibrator component-contribution ΔG' engine
     #   viva-tellurium    — Tellurium/libRoadRunner SBML engine
@@ -67,6 +71,8 @@ allow-direct-references = true
 packages = ["viva_genesis"]
 
 [tool.uv.sources]
+viva-phreeqc = { git = "https://github.com/vivarium-collective/viva-phreeqc.git", tag = "0.1.0" }
+viva-fipy = { git = "https://github.com/vivarium-collective/viva-fipy.git", tag = "0.1.0" }
 process-bigraph = { git = "https://github.com/vivarium-collective/process-bigraph.git", branch = "main" }
 viva-basic-processes = { git = "https://github.com/vivarium-collective/viva-basic-processes.git", branch = "main" }
 # Sources for the optional `workspace` extra:
@@ -74,7 +80,7 @@ vivarium-workbench = { git = "https://github.com/vivarium-collective/vivarium-wo
 viva-superpowers = { git = "https://github.com/vivarium-collective/viva-superpowers.git", branch = "main" }
 # Genuine-simulator wrappers (pinned to releases).
 viva-equilibrator = { git = "https://github.com/vivarium-collective/viva-equilibrator.git", tag = "v0.1.0" }
-viva-tellurium = { git = "https://github.com/vivarium-collective/viva-tellurium.git", tag = "v0.1.2" }
+viva-tellurium = { git = "https://github.com/vivarium-collective/viva-tellurium.git", tag = "0.2.4" }
 viva-fenics = { git = "https://github.com/vivarium-collective/viva-fenics.git", tag = "v0.1.0" }
 # viva-openmm has no release tag yet — pin to the pushed rename commit on main.
 viva-openmm = { git = "https://github.com/vivarium-collective/viva-openmm.git", rev = "7b7cb6a" }
