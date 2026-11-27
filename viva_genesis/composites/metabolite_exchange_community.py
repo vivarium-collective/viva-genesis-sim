@@ -190,7 +190,9 @@ def metabolite_exchange_community(core=None, *, model_proto_ecology="reaction_un
         rates[aid] = {k: 0.0 for k in _AGENT_SCALARS}
         doc[f"network_{aid}"] = {
             "_type": "process", "address": net_addr, "interval": 1.0,
-            "config": {"lineage": name, "volume": v_agent, "null_seed": int(null_seed), "conc_floor": float(function_floor)},
+            "config": {"lineage": name, "volume": v_agent,
+                       "null_seed": int(null_seed) if model_proto_ecology == "null_network" else -1,
+                       "conc_floor": float(function_floor)},
             "inputs": {"internal": ["agents", aid, "internal", "dissolved"]},
             "outputs": {"internal": ["agents", aid, "internal", "dissolved"],
                         "functions_produced": ["metabolism", aid, "functions_produced"],

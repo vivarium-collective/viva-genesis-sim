@@ -383,7 +383,7 @@ INTERFACES = {
         "face": "proto_ecology",
         "models": {
             "reaction_universe": "local:ProtocellNetworkProcess",       # A (Phase-3 universe inside the agent)
-            "null_network": "local:ProtocellNullNetworkProcess",        # A (Phase-3 matched null inside the agent)
+            "null_network": "local:ProtocellNetworkProcess",            # A (matched null — same process, config null_seed>=0)
         },
     },
 }
