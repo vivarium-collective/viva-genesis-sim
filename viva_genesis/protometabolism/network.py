@@ -28,21 +28,9 @@ _OW = {"_type": "overwrite[float]"}
 _OW_MOLAR = {"_type": "overwrite[float]", "_units": "molar"}
 _OW_DIMLESS = {"_type": "overwrite[float]", "_units": "dimensionless"}
 
-# Antimony reaction network (rTCA fragment, CSTR). co2_in / pyr_in are the feed
-# set-points driven from the upstream (og-01) products each tick.
-_MODEL = """
-  species CO2, pyruvate, OAA, malate, succinate, acetate;
-  Jf_co2:  => CO2;        k_feed*(co2_in - CO2);
-  Jf_pyr:  => pyruvate;   k_feed*(pyr_in - pyruvate);
-  R_carb:  pyruvate + CO2 => OAA;          k_carb*pyruvate*CO2;
-  R_rtca:  OAA + 2 CO2 => 2 OAA + acetate; k_rtca*OAA*CO2;
-  R_mal:   OAA => malate;                  k1*OAA;
-  R_suc:   malate => succinate;            k2*malate;
-  Wc: CO2 => ; k_wash*CO2;  Wp: pyruvate => ; k_wash*pyruvate;  Wo: OAA => ; k_wash*OAA;
-  Wm: malate => ; k_wash*malate;  Ws: succinate => ; k_wash*succinate;  Wa: acetate => ; k_wash*acetate;
-  CO2=2e-3; pyruvate=1e-4; OAA=1e-5; malate=0; succinate=0; acetate=0;
-  co2_in=2e-3; pyr_in=1e-4; k_feed=0.5; k_carb=50; k_rtca=800; k1=0.1; k2=0.1; k_wash=0.05;
-"""
+# The rTCA-fragment CSTR model now lives as committed data:
+#   viva_genesis/data/models/curated_rtca.ant  (loaded via viva_genesis.sbml_models)
+# co2_in / pyr_in are the feed set-points driven from the upstream (og-01) products.
 
 # Species-linking edges (undirected) for the networkx connectivity check.
 _REACTION_EDGES = [
@@ -99,6 +87,10 @@ class RoadRunnerNetworkProcess(Process):
         "k_rtca": {"_type": "float", "_default": 800.0, "_units": "1/second"},
         "k_wash": {"_type": "float", "_default": 0.05, "_units": "1/second"},
         "reactor_volume_scale": {"_type": "float", "_default": 1.0, "_units": "liter"},  # L
+        # model-as-data: a data/models/ filename (antimony/SBML), an absolute path, or
+        # inline model text. Default = the committed curated rTCA-fragment CSTR.
+        "model": {"_type": "string", "_default": "curated_rtca.ant", "_units": "dimensionless",
+                  "_provenance": "measured"},
     }
 
     def __init__(self, config=None, core=None):
@@ -124,10 +116,10 @@ class RoadRunnerNetworkProcess(Process):
 
     def _engine(self):
         if self._rr is None:
-            # Reuse the genuine libRoadRunner/Antimony engine from the imported
-            # viva-tellurium wrapper (lazy) instead of importing tellurium here.
-            from viva_tellurium.processes import _load_roadrunner
-            self._rr = _load_roadrunner(_MODEL, model_format="antimony")
+            # Load the curated rTCA model from committed data (model-as-data) and
+            # integrate it with the imported viva_tellurium / libRoadRunner engine.
+            from .. import sbml_models
+            self._rr = sbml_models.load_roadrunner(self.config.get("model", "curated_rtca.ant"))
             self._rr.k_rtca = float(self.config["k_rtca"])
             self._rr.k_wash = float(self.config["k_wash"])
             self._connected = self._network_connected()

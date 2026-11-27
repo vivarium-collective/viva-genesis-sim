@@ -134,6 +134,11 @@ class ReactionUniverseProcess(Process):
         "max_cycle_len": {"_type": "integer", "_default": 6, "_units": "dimensionless", "_provenance": "inferred"},
         "reactor_volume_scale": {"_type": "float", "_default": 1.0, "_units": "liter", "_provenance": "inferred"},
         "thermo_source": {"_type": "string", "_default": "package", "_provenance": "inferred"},
+        # model selector: the rule-generated universe ("universe", default) or the
+        # curated rTCA cycle ("rtca"). A non-negative null_seed applies the matched null.
+        "model": {"_type": "string", "_default": "universe", "_units": "dimensionless", "_provenance": "inferred"},
+        "carboxylation_drive_kj": {"_type": "float", "_default": 0.0, "_units": "kilojoule/mole",
+                                   "_provenance": "counterfactual"},
     }
 
     def __init__(self, config=None, core=None):
@@ -178,12 +183,21 @@ class ReactionUniverseProcess(Process):
 
     # -- engine -------------------------------------------------------------
     def build_universe(self) -> U.Universe:
-        """The network this class integrates (subclasses swap in the null)."""
-        thermo = None
-        if str(self.config.get("thermo_source", "package")) == "equilibrator":
-            cond = U.ThermoConditions(**U.load_thermo_table()["conditions"])
-            thermo = U.build_thermo_table(U.enumerate_skeletons(int(self.config["max_carbons"])), cond)
-        return U.build_universe(int(self.config["max_carbons"]), thermo=thermo)
+        """The network this class integrates. ``config['model']`` selects the rule-generated
+        universe ('universe', default) or the curated rTCA cycle ('rtca'); a non-negative
+        ``config['null_seed']`` applies the degree-preserving matched-null rewiring."""
+        if str(self.config.get("model", "universe")) == "rtca":
+            from .rtca import build_rtca_universe, _cached_potentials
+            base = build_rtca_universe(potentials=_cached_potentials(),
+                                       carboxylation_drive_kj=float(self.config.get("carboxylation_drive_kj", 0.0)))
+        else:
+            thermo = None
+            if str(self.config.get("thermo_source", "package")) == "equilibrator":
+                cond = U.ThermoConditions(**U.load_thermo_table()["conditions"])
+                thermo = U.build_thermo_table(U.enumerate_skeletons(int(self.config["max_carbons"])), cond)
+            base = U.build_universe(int(self.config["max_carbons"]), thermo=thermo)
+        seed = int(self.config.get("null_seed", -1))
+        return U.null_network(base, seed) if seed >= 0 else base
 
     def universe(self) -> U.Universe:
         if self._u is None:
@@ -301,32 +315,11 @@ class ReactionUniverseProcess(Process):
         return out
 
 
-class NullNetworkProcess(ReactionUniverseProcess):
-    """Matched null control: the universe's compounds, reaction count, arity,
-    catalyst density and carbon balance with the topology rewired
-    (degree-preserving swaps within carbon-count classes); ``null_seed`` picks
-    the draw. Same engine, same detector, same ledger — H/O balance is lost by
-    design and the element residual reports it."""
-
-    contract = {
-        **ReactionUniverseProcess.contract,
-        "summary": "Matched null network: degree-preserving, carbon-count-matched rewiring of the reaction universe on the same libRoadRunner engine and post-hoc detector.",
-        "description": (
-            "The adversarial control of the proto_metabolism face. Starting from the generated "
-            "universe, organic species are swapped between reaction slots of equal carbon count "
-            "(Maslov-Sneppen rewiring), which preserves the compound set, the reaction count, each "
-            "reaction's arity, each species' participation count, every reaction's catalyst class and "
-            "carbon balance, while destroying the chemistry (H/O balance and functional-group logic). "
-            "Reaction dG' are recomputed from the same compound potentials so the null's kinetics are "
-            "thermodynamically consistent. Integrated and graded exactly as the universe."
-        ),
-        "references": ["maslov2002specificity", "blokhuis2020universal"],
-    }
-
-    def build_universe(self) -> U.Universe:
-        base = super().build_universe()
-        seed = int(self.config.get("null_seed", -1))
-        return U.null_network(base, seed if seed >= 0 else 0)
+# The matched-null control is no longer a separate process: ReactionUniverseProcess
+# applies the degree-preserving, carbon-count-matched rewiring (Maslov-Sneppen) when
+# config["null_seed"] >= 0 — same engine, same detector, same ledger; H/O balance is
+# lost by design and the element residual reports it (maslov2002specificity,
+# blokhuis2020universal).
 
 
 def network_state(proc: ReactionUniverseProcess) -> dict:
@@ -336,4 +329,4 @@ def network_state(proc: ReactionUniverseProcess) -> dict:
             "universe": proc.universe().summary() if getattr(proc, "_u", None) is not None else {}}
 
 
-__all__ = ["ReactionUniverseProcess", "NullNetworkProcess", "SPECIES_PORTS", "CURRENCY", "network_state"]
+__all__ = ["ReactionUniverseProcess", "SPECIES_PORTS", "CURRENCY", "network_state"]

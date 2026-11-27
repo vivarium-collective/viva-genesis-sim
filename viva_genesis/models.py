@@ -330,9 +330,9 @@ INTERFACES = {
     "proto_metabolism": {
         "face": "proto_metabolism",
         "models": {
-            "curated_rtca": "local:RoadRunnerNetworkProcess",        # E (og-02 curated rTCA-fragment SBML)
+            "curated_rtca": "local:RoadRunnerNetworkProcess",        # E (og-02 curated rTCA-fragment SBML data file)
             "reaction_universe": "local:ReactionUniverseProcess",    # A (rule-generated C/H/O universe, eQuilibrator dG')
-            "null_network": "local:NullNetworkProcess",              # A (matched degree-preserving null)
+            "null_network": "local:ReactionUniverseProcess",         # A (matched null — same process, config null_seed>=0)
         },
     },
     # The endogenous boundary (Model Upgrade plan, Phase 5). single_chain/mixed
