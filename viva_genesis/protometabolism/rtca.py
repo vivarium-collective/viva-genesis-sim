@@ -215,7 +215,8 @@ def build_rtca_universe(potentials: dict[str, float] | None = None,
 # specificity. ``_RTCA_POTENTIALS`` caches the eQuilibrator table so repeated
 # instantiation (sweeps, seeded/unseeded pairs) resolves thermo once.
 # --------------------------------------------------------------------------- #
-from .universe_process import ReactionUniverseProcess, NullNetworkProcess  # noqa: E402
+# (no process classes here anymore — ReactionUniverseProcess builds the rtca model
+#  via build_rtca_universe below, selected by config["model"] == "rtca")
 
 _RTCA_POTENTIALS: dict[str, float] | None = None
 
@@ -231,37 +232,15 @@ _DRIVE_SCHEMA = {"carboxylation_drive_kj": {"_type": "float", "_default": 0.0, "
                                             "_provenance": "counterfactual"}}
 
 
-class RTCANetworkProcess(ReactionUniverseProcess):
-    """The curated mechanistic rTCA network on the real libRoadRunner engine —
-    identical machinery to the rule-generated universe, only the network is the
-    hand-curated reductive-TCA cycle (:func:`build_rtca_universe`).
-    ``carboxylation_drive_kj`` (default 0) is the labelled stronger-reductant
-    counterfactual, off for the real vent result."""
-
-    config_schema = {**ReactionUniverseProcess.config_schema, **_DRIVE_SCHEMA}
-
-    def build_universe(self):  # type: ignore[override]
-        return build_rtca_universe(potentials=_cached_potentials(),
-                                   carboxylation_drive_kj=float(self.config.get("carboxylation_drive_kj", 0.0)))
-
-
-class RTCANullProcess(ReactionUniverseProcess):
-    """Degree-preserving matched null of the rTCA network (same compounds,
-    reaction count, arity, catalyst density, carbon balance; topology rewired),
-    for the topology-specificity arm. ``null_seed`` picks the draw."""
-
-    config_schema = {**ReactionUniverseProcess.config_schema, **_DRIVE_SCHEMA}
-
-    def build_universe(self):  # type: ignore[override]
-        base = build_rtca_universe(potentials=_cached_potentials(),
-                                   carboxylation_drive_kj=float(self.config.get("carboxylation_drive_kj", 0.0)))
-        seed = int(self.config.get("null_seed", 0))
-        return U.null_network(base, seed if seed >= 0 else 0)
+# The rTCA network + its matched null are no longer separate processes:
+# ReactionUniverseProcess builds the curated rTCA cycle when config["model"] == "rtca"
+# (with carboxylation_drive_kj), and applies the degree-preserving matched null when
+# config["null_seed"] >= 0. build_rtca_universe / _cached_potentials below are the
+# model builders it calls.
 
 
 __all__ = [
     "OAA", "MALATE", "SUCCINATE", "AKG", "PYRUVATE", "ACETATE",
     "CITRATE", "ISOCITRATE", "ACONITATE", "BRANCHED", "ORGANICS", "CARRIER",
     "rtca_potentials", "rtca_reactions", "build_rtca_universe",
-    "RTCANetworkProcess", "RTCANullProcess",
 ]

@@ -982,47 +982,46 @@ def _contract(name: str, mechanism: str, refs: list[str]) -> dict:
     }
 
 
-class RnaLikeHeredityProcess(_HeredityProcessBase):
-    HEREDITY_CLASS = "rna_like"
-    contract = _contract("rna_like", "an L-site template copied template-directed with per-site fidelity q (Eigen ratchet with back-mutation), L nucleotides + L quanta per copy",
-                         ["eigen1971selforganization", "johnston2001rna", "rajamani2010effect"])
-
-
-class PeptideHeredityProcess(_HeredityProcessBase):
-    HEREDITY_CLASS = "peptide"
-    contract = _contract("peptide", "a short peptide whose functional copies weakly template their own ligation (per-site fidelity q_p over a 20-letter alphabet), L_p amino acids + L_p quanta per copy",
-                         ["huber1998peptides", "lee1996selfreplicating"])
-
-
-class CompositionalHeredityProcess(_HeredityProcessBase):
-    HEREDITY_CLASS = "compositional"
-    contract = _contract("compositional", "a GARD assembly whose composition over K amphiphile types grows by mutually-catalysed incorporation (lognormal beta with two composomes) and is inherited by random fission; 1 amphiphile and 0 quanta per incorporation",
-                         ["segre2000compositional", "vasas2010lack"])
-
-
-class NetworkHeredityProcess(_HeredityProcessBase):
-    HEREDITY_CLASS = "network"
-    contract = _contract("network", "M autocatalytic cores growing from a precursor (1 amino acid + 1 quantum per molecule), lost by dilution at fission and re-seeded only by rare spontaneous formation: attractor heredity of at most M bits",
-                         ["vasas2010lack", "szathmary2006origin"])
-
-
-class MineralStateHeredityProcess(_HeredityProcessBase):
-    HEREDITY_CLASS = "mineral_state"
-    contract = _contract("mineral_state", "a B-bit defect pattern on a crystal face copied into every new layer with per-bit error p_m (1 mineral growth unit, 0 quanta per layer); cleavage hands both daughters the face",
-                         ["cairnssmith1982genetic"])
-
-
-class HybridHeredityProcess(_HeredityProcessBase):
-    HEREDITY_CLASS = "hybrid"
-    contract = _contract("hybrid", "a short template (L_h sites, nucleotides + quanta) whose function focuses a GARD composition on the functional composome (amphiphiles, no quanta)",
-                         ["segre2000compositional", "eigen1971selforganization", "szathmary2006origin"])
-
-
-HEREDITY_PROCESSES = {
-    "compositional": CompositionalHeredityProcess, "network": NetworkHeredityProcess,
-    "peptide": PeptideHeredityProcess, "rna_like": RnaLikeHeredityProcess,
-    "hybrid": HybridHeredityProcess, "mineral_state": MineralStateHeredityProcess,
+# Per-heredity-class contract data (mechanism description + citations). These used to
+# live on six near-identical Process subclasses; keeping them as data lets one
+# config-driven HeredityProcess serve every class.
+_HEREDITY_CONTRACTS = {
+    "rna_like": ("an L-site template copied template-directed with per-site fidelity q (Eigen ratchet with back-mutation), L nucleotides + L quanta per copy",
+                 ["eigen1971selforganization", "johnston2001rna", "rajamani2010effect"]),
+    "peptide": ("a short peptide whose functional copies weakly template their own ligation (per-site fidelity q_p over a 20-letter alphabet), L_p amino acids + L_p quanta per copy",
+                ["huber1998peptides", "lee1996selfreplicating"]),
+    "compositional": ("a GARD assembly whose composition over K amphiphile types grows by mutually-catalysed incorporation (lognormal beta with two composomes) and is inherited by random fission; 1 amphiphile and 0 quanta per incorporation",
+                      ["segre2000compositional", "vasas2010lack"]),
+    "network": ("M autocatalytic cores growing from a precursor (1 amino acid + 1 quantum per molecule), lost by dilution at fission and re-seeded only by rare spontaneous formation: attractor heredity of at most M bits",
+                ["vasas2010lack", "szathmary2006origin"]),
+    "mineral_state": ("a B-bit defect pattern on a crystal face copied into every new layer with per-bit error p_m (1 mineral growth unit, 0 quanta per layer); cleavage hands both daughters the face",
+                      ["cairnssmith1982genetic"]),
+    "hybrid": ("a short template (L_h sites, nucleotides + quanta) whose function focuses a GARD composition on the functional composome (amphiphiles, no quanta)",
+               ["segre2000compositional", "eigen1971selforganization", "szathmary2006origin"]),
 }
+
+
+class HeredityProcess(_HeredityProcessBase):
+    """General, config-driven heredity module. ``config['heredity_class']`` selects the
+    mechanism — one of ``HEREDITY_CLASSES`` (rna_like | peptide | compositional | network |
+    mineral_state | hybrid). Replaces the six per-class wrapper processes; each class's
+    mechanism + citations live in ``_HEREDITY_CONTRACTS`` and surface on ``self.contract``."""
+
+    config_schema = {**_CONFIG, "heredity_class": _p("rna_like", typ="string", prov="inferred")}
+    contract = _contract("heredity", "a config-selected heredity mechanism on the shared face", [])
+
+    def __init__(self, config=None, core=None):
+        super().__init__(config=config, core=core)
+        hc = str((self.config or {}).get("heredity_class") or "rna_like")
+        if hc not in KINETICS:
+            raise KeyError(f"unknown heredity_class {hc!r}; have {sorted(KINETICS)}")
+        self.HEREDITY_CLASS = hc
+        self.contract = _contract(hc, *_HEREDITY_CONTRACTS[hc])
+
+
+# Back-compat: class-name registry now maps every heredity class to the one general,
+# config-driven process (pass config={"heredity_class": <name>}).
+HEREDITY_PROCESSES = {name: HeredityProcess for name in HEREDITY_CLASSES}
 
 
 # --------------------------------------------------------------------------- #
@@ -1181,6 +1180,4 @@ class HeredityAttachmentStep(Step):
 
 
 __all__ = ["HEREDITY_CLASSES", "POOLS", "DEFAULTS", "KINETICS", "HEREDITY_PROCESSES", "make_kinetics", "BudgetFeedProcess",
-           "CompetingLineage", "simulate_competing", "HeredityAttachmentStep",
-           "RnaLikeHeredityProcess", "PeptideHeredityProcess", "CompositionalHeredityProcess",
-           "NetworkHeredityProcess", "MineralStateHeredityProcess", "HybridHeredityProcess"]
+           "CompetingLineage", "simulate_competing", "HeredityAttachmentStep", "HeredityProcess"]

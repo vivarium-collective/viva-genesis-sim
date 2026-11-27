@@ -382,7 +382,10 @@ class ProtocellNetworkProcess(Process):
         return REPERTOIRES[name]
 
     def null_seed(self):
-        return None
+        # config['null_seed'] >= 0 applies the degree-preserving matched-null rewiring
+        # (the former ProtocellNullNetworkProcess); < 0 (default) keeps the real network.
+        seed = int(self.config.get("null_seed", -1))
+        return seed if seed >= 0 else None
 
     def bundle(self) -> dict:
         if self._b is None:
@@ -515,21 +518,11 @@ class ProtocellNetworkProcess(Process):
         }
 
 
-class ProtocellNullNetworkProcess(ProtocellNetworkProcess):
-    """The ``null_network`` class of the proto_ecology face: the Phase-3 matched
-    null (degree-preserving, (C,O)-matched rewiring) inside each agent, with
-    the same lineage masks — the adversarial control of the community-function
-    gate (does rewired chemistry also 'divide labour'?)."""
-
-    contract = {
-        **ProtocellNetworkProcess.contract,
-        "summary": "Matched null network inside each protocell: the Phase-3 rewired universe with the same lineage rule masks, on the same engine.",
-        "references": ["maslov2002specificity", "wolos2020synthetic"],
-    }
-
-    def null_seed(self):
-        seed = int(self.config.get("null_seed", -1))
-        return seed if seed >= 0 else 0
+# The null_network class of the proto_ecology face is no longer a separate process:
+# ProtocellNetworkProcess applies the Phase-3 matched null (degree-preserving, (C,O)-
+# matched rewiring) inside each agent with the same lineage masks when
+# config['null_seed'] >= 0 — the adversarial control of the community-function gate
+# (maslov2002specificity, wolos2020synthetic).
 
 
 # --------------------------------------------------------------------------- #
@@ -864,5 +857,5 @@ class EcologyReducerStep(Step):
 
 __all__ = ["REPERTOIRES", "FREE_RULES", "FUNCTIONS", "LUCA_CORE", "EXTRA_SPECIES", "CANONICAL_TO_UNIVERSE",
            "PERMEABILITY_CLASSES", "DEFAULT_PERMEABILITY", "permeability_class", "function_of", "function_names",
-           "field_species", "species_elements", "protocell_antimony", "ProtocellNetworkProcess", "ProtocellNullNetworkProcess",
+           "field_species", "species_elements", "protocell_antimony", "ProtocellNetworkProcess",
            "SpatialCouplingStep", "EcologyReducerStep"]

@@ -330,9 +330,9 @@ INTERFACES = {
     "proto_metabolism": {
         "face": "proto_metabolism",
         "models": {
-            "curated_rtca": "local:RoadRunnerNetworkProcess",        # E (og-02 curated rTCA-fragment SBML)
+            "curated_rtca": "local:RoadRunnerNetworkProcess",        # E (og-02 curated rTCA-fragment SBML data file)
             "reaction_universe": "local:ReactionUniverseProcess",    # A (rule-generated C/H/O universe, eQuilibrator dG')
-            "null_network": "local:NullNetworkProcess",              # A (matched degree-preserving null)
+            "null_network": "local:ReactionUniverseProcess",         # A (matched null — same process, config null_seed>=0)
         },
     },
     # The endogenous boundary (Model Upgrade plan, Phase 5). single_chain/mixed
@@ -362,13 +362,16 @@ INTERFACES = {
     # predates the face (no budgets, no attachment) and does NOT satisfy it.
     "heredity": {
         "face": "heredity",
+        # All six heredity classes are served by ONE config-driven HeredityProcess
+        # (wired with config={"heredity_class": <name>}); each class's mechanism +
+        # citations live in heredity.competing._HEREDITY_CONTRACTS.
         "models": {
-            "compositional": "local:CompositionalHeredityProcess",   # A (GARD composition, Segre 2000)
-            "network": "local:NetworkHeredityProcess",               # A (autocatalytic-core attractors, Vasas 2010)
-            "peptide": "local:PeptideHeredityProcess",               # A (weakly templated peptide ligation)
-            "rna_like": "local:RnaLikeHeredityProcess",              # A (template copy, Eigen ratchet)
-            "hybrid": "local:HybridHeredityProcess",                 # A (short template focusing a composition)
-            "mineral_state": "local:MineralStateHeredityProcess",    # A (crystal-face defect pattern, Cairns-Smith)
+            "compositional": "local:HeredityProcess",   # GARD composition, Segre 2000
+            "network": "local:HeredityProcess",         # autocatalytic-core attractors, Vasas 2010
+            "peptide": "local:HeredityProcess",         # weakly templated peptide ligation
+            "rna_like": "local:HeredityProcess",        # template copy, Eigen ratchet
+            "hybrid": "local:HeredityProcess",          # short template focusing a composition
+            "mineral_state": "local:HeredityProcess",   # crystal-face defect pattern, Cairns-Smith
         },
     },
     # Biochemical ecology (Model Upgrade plan, Phase 8): the Phase-3 network
@@ -380,7 +383,7 @@ INTERFACES = {
         "face": "proto_ecology",
         "models": {
             "reaction_universe": "local:ProtocellNetworkProcess",       # A (Phase-3 universe inside the agent)
-            "null_network": "local:ProtocellNullNetworkProcess",        # A (Phase-3 matched null inside the agent)
+            "null_network": "local:ProtocellNetworkProcess",            # A (matched null — same process, config null_seed>=0)
         },
     },
 }

@@ -37,10 +37,10 @@ real reaction networks per protocell (``ProtocellNetworkProcess`` /
 
 from .metacommunity import CrossFeedingMetacommunityProcess  # noqa: E402,F401
 from .proto_ecology import (EcologyReducerStep, ProtocellNetworkProcess,  # noqa: E402,F401
-                            ProtocellNullNetworkProcess, SpatialCouplingStep)
+                            SpatialCouplingStep)
 from .reactive_system import BigraphicalReactiveSystem  # noqa: E402,F401
 from .stochastic_ecology import StochasticProtocellEcologyProcess  # noqa: E402,F401
 
-__all__ = ["CrossFeedingMetacommunityProcess", "ProtocellNetworkProcess", "ProtocellNullNetworkProcess",
+__all__ = ["CrossFeedingMetacommunityProcess", "ProtocellNetworkProcess",
            "SpatialCouplingStep", "EcologyReducerStep", "BigraphicalReactiveSystem",
            "StochasticProtocellEcologyProcess"]

@@ -75,8 +75,10 @@ def og_rtca_autocatalysis(core=None, *, supply_H2=_FEED_H2, supply_CO2=_FEED_CO2
                           matched_null=False, null_seed=0, carboxylation_drive_kj=0.0):
     if core is None:
         core = build_core()
-    address = "local:RTCANullProcess" if matched_null else "local:RTCANetworkProcess"
-    config = {"k_wash": float(k_wash), "carboxylation_drive_kj": float(carboxylation_drive_kj)}
+    # The rTCA network + its matched null are now one process (ReactionUniverseProcess):
+    # model="rtca" selects the curated cycle; null_seed>=0 applies the matched null.
+    address = "local:ReactionUniverseProcess"
+    config = {"k_wash": float(k_wash), "model": "rtca", "carboxylation_drive_kj": float(carboxylation_drive_kj)}
     if matched_null:
         config["null_seed"] = int(null_seed)
     inputs = {"feed_CO2": ["feed", "CO2"], "feed_H2": ["feed", "H2"], "feed_pyruvate": ["feed", "pyruvate"],
