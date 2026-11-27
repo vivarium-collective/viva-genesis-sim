@@ -284,6 +284,7 @@ def integrated_autonomy_world(core=None, *, model_energy_coupling="thioester_acy
     # the heredity class's clock: lineage-time units per world second
     ratio = float(heredity_clock_ratio)
     class_cfg = {"seed": int(seed), "n_individuals": int(HEREDITY_DEFAULTS["n_individuals"]),
+                 "heredity_class": model_heredity,
                  **{k: float(HEREDITY_DEFAULTS[k]) * ratio for k in _HEREDITY_RATES}}
     attach_cfg = {"heredity_class": model_heredity, "n_individuals": int(HEREDITY_DEFAULTS["n_individuals"]),
                   **{k: float(HEREDITY_DEFAULTS[k]) * ratio for k in _HEREDITY_RATES}}

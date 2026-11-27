@@ -115,6 +115,7 @@ def competing_heredity(core=None, *, model_heredity="rna_like", attachment="step
     feeds = {"nucleotide_precursor": float(nucleotide_feed), "amino_precursor": float(amino_feed),
              "amphiphile": float(amphiphile_feed), "mineral_precursor": float(mineral_feed)}
     class_cfg = {"seed": int(seed), "n_individuals": int(n_individuals), "per_site_fidelity": float(per_site_fidelity),
+                 "heredity_class": model_heredity,
                  "peptide_fidelity": float(peptide_fidelity), "defect_copy_error": float(defect_copy_error),
                  "nominal_feed": float(DEFAULTS["nominal_feed"])}
     w0 = float(power)
