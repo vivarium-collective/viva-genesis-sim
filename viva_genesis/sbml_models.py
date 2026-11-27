@@ -29,6 +29,6 @@ def read_model(model: str) -> tuple[str, str]:
 def load_roadrunner(model: str):
     """Load a libRoadRunner instance for ``model`` via the imported viva_tellurium
     engine (the genuine SBML/antimony integrator)."""
-    from viva_tellurium.processes import _load_roadrunner
+    from viva_tellurium import load_roadrunner  # public engine API
     text, fmt = read_model(model)
-    return _load_roadrunner(text, model_format=fmt)
+    return load_roadrunner(text, model_format=fmt)

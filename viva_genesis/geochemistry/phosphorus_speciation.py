@@ -159,8 +159,8 @@ class PhosphorusSpeciationProcess(Process):
 
     def _engine(self, supply):
         if self._rr is None:
-            from viva_tellurium.processes import _load_roadrunner  # genuine engine via the imported wrapper (lazy)
-            self._rr = _load_roadrunner(_MODEL, model_format="antimony")
+            from viva_tellurium import load_roadrunner  # public engine API
+            self._rr = load_roadrunner(_MODEL, model_format="antimony")
             for k in ("k_cond", "k_phyd", "k_act", "k_hyd", "k_prec", "k_des"):
                 setattr(self._rr, k, float(self.config[k]))
             self._rr.phosphate = float(supply)

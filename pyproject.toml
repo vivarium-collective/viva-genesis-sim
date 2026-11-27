@@ -80,7 +80,7 @@ vivarium-workbench = { git = "https://github.com/vivarium-collective/vivarium-wo
 viva-superpowers = { git = "https://github.com/vivarium-collective/viva-superpowers.git", branch = "main" }
 # Genuine-simulator wrappers (pinned to releases).
 viva-equilibrator = { git = "https://github.com/vivarium-collective/viva-equilibrator.git", tag = "v0.1.0" }
-viva-tellurium = { git = "https://github.com/vivarium-collective/viva-tellurium.git", tag = "v0.1.2" }
+viva-tellurium = { git = "https://github.com/vivarium-collective/viva-tellurium.git", tag = "0.2.4" }
 viva-fenics = { git = "https://github.com/vivarium-collective/viva-fenics.git", tag = "v0.1.0" }
 # viva-openmm has no release tag yet — pin to the pushed rename commit on main.
 viva-openmm = { git = "https://github.com/vivarium-collective/viva-openmm.git", rev = "7b7cb6a" }

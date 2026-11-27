@@ -119,8 +119,8 @@ class HeredityReplicatorProcess(Process):
         return {"temperature": 353.15}
 
     def _build(self, krep_eff):
-        from viva_tellurium.processes import _load_roadrunner  # genuine engine via the imported wrapper
-        rr = _load_roadrunner(_MODEL, model_format="antimony")
+        from viva_tellurium import load_roadrunner  # public engine API
+        rr = load_roadrunner(_MODEL, model_format="antimony")
         L = max(int(self.config["polymer_length"]), 1)
         rr.Q = float(self.config["per_site_fidelity"]) ** L          # whole-sequence fidelity
         rr.qe = float(self.config["error_fidelity"])
