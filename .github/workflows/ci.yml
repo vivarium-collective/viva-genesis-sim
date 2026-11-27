@@ -10,10 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: astral-sh/setup-uv@v5
-      - name: Create venv
-        run: uv venv --python 3.12
       - name: Install (core + workspace extra)
-        run: uv pip install -e ".[dev,workspace]"
+        run: uv pip install --system -e ".[dev,workspace]"
+      - name: Expose libpython (roadrunner/tellurium dlopen libpython3.12.so)
+        run: echo "LD_LIBRARY_PATH=$(python -c 'import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"))'):${LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
       - name: Test
-        run: uv run pytest tests/ -q
+        run: pytest tests/ -q
